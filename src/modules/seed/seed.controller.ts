@@ -1,4 +1,4 @@
-import { Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, HttpCode, HttpStatus, HttpException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SeedService } from './seed.service';
 
@@ -26,8 +26,32 @@ export class SeedController {
       }
     }
   })
+  @ApiResponse({ 
+    status: 500, 
+    description: 'Internal server error',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 500 },
+        message: { type: 'string' },
+        error: { type: 'string' }
+      }
+    }
+  })
   async init() {
-    return await this.seedService.seedAll();
+    try {
+      return await this.seedService.seedAll();
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: error.message || 'Error initializing database',
+          error: 'Internal Server Error',
+          details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Post('tables')
