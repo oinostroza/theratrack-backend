@@ -10,11 +10,13 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../../entities';
 
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -23,6 +25,18 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('with-passwords')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ 
+    summary: 'Get all users with passwords', 
+    description: 'Returns all users with their seed passwords (123456). Only for admin/development purposes.' 
+  })
+  @ApiResponse({ status: 200, description: 'List of users with passwords' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllWithPasswords() {
+    return this.usersService.findAllWithPasswords();
   }
 
   @Get('profile')

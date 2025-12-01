@@ -14,6 +14,26 @@ export class UsersService {
     return this.userRepository.find();
   }
 
+  /**
+   * Obtiene todos los usuarios con sus contraseñas del seed
+   * IMPORTANTE: Solo para desarrollo/admin. Las contraseñas del seed son '123456'
+   */
+  async findAllWithPasswords(): Promise<any[]> {
+    const users = await this.userRepository.find({
+      select: ['id', 'email', 'role'],
+    });
+
+    // Mapear usuarios con contraseñas conocidas del seed
+    // Todos los usuarios del seed tienen contraseña '123456'
+    return users.map(user => ({
+      id: user.id.toString(),
+      email: user.email,
+      name: user.email.split('@')[0], // Usar parte del email como nombre
+      role: user.role,
+      password: '123456', // Contraseña conocida del seed
+    }));
+  }
+
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
