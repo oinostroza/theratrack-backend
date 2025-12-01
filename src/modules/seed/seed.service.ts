@@ -767,12 +767,13 @@ export class SeedService {
         ? new Date(session.start_time).toISOString().split('T')[0]
         : new Date().toISOString().split('T')[0];
 
+      const petName = session.pet_name || 'la mascota';
       const notes = [
-        `Reporte de sesión para ${session.pet_name}. Todo salió bien.`,
-        `${session.pet_name} se mostró muy activo y colaborativo durante la sesión.`,
-        `Sesión exitosa con ${session.pet_name}. Se cumplieron todos los objetivos.`,
-        `${session.pet_name} disfrutó mucho de las actividades. Comportamiento excelente.`,
-        `Reporte positivo para ${session.pet_name}. Sin incidencias.`,
+        `Reporte de sesión para ${petName}. Todo salió bien.`,
+        `${petName} se mostró muy activo y colaborativo durante la sesión.`,
+        `Sesión exitosa con ${petName}. Se cumplieron todos los objetivos.`,
+        `${petName} disfrutó mucho de las actividades. Comportamiento excelente.`,
+        `Reporte positivo para ${petName}. Sin incidencias.`,
       ][Math.floor(Math.random() * 5)];
 
       try {
