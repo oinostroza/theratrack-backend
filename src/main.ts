@@ -27,7 +27,7 @@ async function bootstrap() {
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('TheraTrack API')
-    .setDescription('API documentation for TheraTrack - Therapy session management system')
+    .setDescription('API documentation for TheraTrack - Therapy session management system and PetTrack - Pet care management system')
     .setVersion('1.0')
     .addTag('auth', 'Authentication endpoints')
     .addTag('users', 'User management')
@@ -35,6 +35,11 @@ async function bootstrap() {
     .addTag('sessions', 'Session management')
     .addTag('transcriptions', 'Transcription management')
     .addTag('seed', 'Database seeding endpoints')
+    .addTag('pets', 'Pet management endpoints')
+    .addTag('care-sessions', 'Care session management endpoints')
+    .addTag('session-reports', 'Session report management endpoints')
+    .addTag('locations', 'Location management endpoints')
+    .addTag('photos', 'Photo management endpoints')
     .addBearerAuth(
       {
         type: 'http',
