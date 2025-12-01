@@ -763,7 +763,9 @@ export class SeedService {
       } : null;
 
       // Usar la fecha de la sesión como fecha del reporte
-      const reportDate = new Date(session.start_time).toISOString().split('T')[0];
+      const reportDate = session.start_time 
+        ? new Date(session.start_time).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
 
       const notes = [
         `Reporte de sesión para ${session.pet_name}. Todo salió bien.`,
@@ -808,7 +810,7 @@ export class SeedService {
 
   async seedLocations() {
     const owners = await this.dataSource.query(
-      `SELECT id FROM "user" WHERE role = 'owner' ORDER BY id`
+      `SELECT id, email FROM "user" WHERE role = 'owner' ORDER BY id`
     );
     const pets = await this.dataSource.query(`SELECT id, owner_id FROM pets ORDER BY owner_id`);
 
@@ -834,10 +836,11 @@ export class SeedService {
     for (let i = 0; i < owners.length; i++) {
       const owner = owners[i];
       const ownerPets = petsByOwner[owner.id] || [];
+      const ownerName = owner.email ? owner.email.split('@')[0] : `Owner${i + 1}`;
       
       // Casa principal (home)
       locationsData.push({
-        name: `Casa de ${owner.email.split('@')[0]}`,
+        name: `Casa de ${ownerName}`,
         address: `Av. Principal ${100 + i * 10}, Santiago`,
         lat: -33.4489 + (i * 0.01),
         lng: -70.6693 + (i * 0.01),
