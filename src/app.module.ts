@@ -26,6 +26,11 @@ import { QueueModule } from './modules/queue/queue.module';
 import { AiAnalysisModule } from './modules/ai-analysis/ai-analysis.module';
 import { TranscriptionsModule } from './modules/transcriptions/transcriptions.module';
 import { SeedModule } from './modules/seed/seed.module';
+import { PetsModule } from './modules/pets/pets.module';
+import { CareSessionsModule } from './modules/care-sessions/care-sessions.module';
+import { SessionReportsModule } from './modules/session-reports/session-reports.module';
+import { LocationsModule } from './modules/locations/locations.module';
+import { PhotosModule } from './modules/photos/photos.module';
 
 @Module({
   imports: [
@@ -78,7 +83,19 @@ import { SeedModule } from './modules/seed/seed.module';
           database: configService.get('DB_DATABASE', 'theratrack'),
           synchronize: !isProduction,
           autoLoadEntities: true,
-          entities: [User, Session, EmotionLog, EmotionAnalysis, Patient, Transcription],
+          entities: [
+              User, 
+              Session, 
+              EmotionLog, 
+              EmotionAnalysis, 
+              Patient, 
+              Transcription,
+              Pet,
+              CareSession,
+              SessionReport,
+              Location,
+              Photo
+            ],
           ssl: isProduction ? { rejectUnauthorized: false } : false,
         };
       },
@@ -93,6 +110,11 @@ import { SeedModule } from './modules/seed/seed.module';
     AiAnalysisModule,
     TranscriptionsModule,
     SeedModule,
+    PetsModule,
+    CareSessionsModule,
+    SessionReportsModule,
+    LocationsModule,
+    PhotosModule,
   ],
   controllers: [AppController, PingController],
   providers: [AppService],
