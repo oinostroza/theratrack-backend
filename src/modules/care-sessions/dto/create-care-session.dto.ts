@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsDateString,
   IsEnum,
+  IsBoolean,
   MaxLength,
 } from 'class-validator';
 import { CareSessionStatus } from '../../../entities/care-session.entity';
