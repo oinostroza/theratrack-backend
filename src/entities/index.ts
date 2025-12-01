@@ -4,3 +4,8 @@ export * from './session.entity';
 export * from './emotion-log.entity';
 export * from './emotion-analysis.entity';
 export * from './transcription.entity';
+export * from './pet.entity';
+export * from './care-session.entity';
+export * from './session-report.entity';
+export * from './location.entity';
+export * from './photo.entity';

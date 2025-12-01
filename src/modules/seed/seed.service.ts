@@ -217,7 +217,7 @@ export class SeedService {
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        role VARCHAR(50) DEFAULT 'patient' CHECK (role IN ('patient', 'therapist'))
+        role VARCHAR(50) DEFAULT 'patient' CHECK (role IN ('patient', 'therapist', 'owner', 'sitter'))
       )`,
       `CREATE TABLE IF NOT EXISTS patients (
         id SERIAL PRIMARY KEY,
@@ -272,6 +272,93 @@ export class SeedService {
       `CREATE INDEX IF NOT EXISTS idx_transcriptions_session_id ON transcriptions(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_emotion_log_user_id ON emotion_log("userId")`,
       `CREATE INDEX IF NOT EXISTS idx_emotion_analysis_log_id ON emotion_analysis("emotionLogId")`,
+      // Tablas para sistema de mascotas
+      `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`,
+      `CREATE TABLE IF NOT EXISTS pets (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) NOT NULL,
+        species VARCHAR(255) NOT NULL,
+        breed VARCHAR(255),
+        age INTEGER,
+        owner_id INTEGER NOT NULL,
+        photo_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_pets_owner FOREIGN KEY (owner_id) REFERENCES "user"(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS care_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        pet_id UUID NOT NULL,
+        sitter_id INTEGER NOT NULL,
+        start_time TIMESTAMP NOT NULL,
+        end_time TIMESTAMP,
+        status VARCHAR(50) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in-progress', 'completed', 'cancelled')),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_care_sessions_pet FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE,
+        CONSTRAINT fk_care_sessions_sitter FOREIGN KEY (sitter_id) REFERENCES "user"(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS session_reports (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        care_session_id UUID NOT NULL,
+        pet_id UUID NOT NULL,
+        sitter_id INTEGER NOT NULL,
+        report_date DATE NOT NULL,
+        activities TEXT[] NOT NULL,
+        notes TEXT NOT NULL,
+        mood VARCHAR(50) CHECK (mood IN ('happy', 'calm', 'anxious', 'playful', 'tired')),
+        feeding JSONB,
+        medication JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_session_reports_care_session FOREIGN KEY (care_session_id) REFERENCES care_sessions(id) ON DELETE CASCADE,
+        CONSTRAINT fk_session_reports_pet FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE,
+        CONSTRAINT fk_session_reports_sitter FOREIGN KEY (sitter_id) REFERENCES "user"(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS locations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) NOT NULL,
+        address TEXT NOT NULL,
+        latitude DECIMAL(10, 8) NOT NULL,
+        longitude DECIMAL(11, 8) NOT NULL,
+        pet_id UUID,
+        owner_id INTEGER NOT NULL,
+        type VARCHAR(50) DEFAULT 'other' CHECK (type IN ('home', 'vet', 'grooming', 'park', 'other')),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_locations_pet FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE SET NULL,
+        CONSTRAINT fk_locations_owner FOREIGN KEY (owner_id) REFERENCES "user"(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS photos (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        url TEXT NOT NULL,
+        thumbnail_url TEXT,
+        pet_id UUID,
+        care_session_id UUID,
+        session_report_id UUID,
+        uploaded_by INTEGER NOT NULL,
+        description TEXT,
+        tags TEXT[],
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_photos_pet FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE SET NULL,
+        CONSTRAINT fk_photos_care_session FOREIGN KEY (care_session_id) REFERENCES care_sessions(id) ON DELETE SET NULL,
+        CONSTRAINT fk_photos_session_report FOREIGN KEY (session_report_id) REFERENCES session_reports(id) ON DELETE SET NULL,
+        CONSTRAINT fk_photos_uploader FOREIGN KEY (uploaded_by) REFERENCES "user"(id) ON DELETE CASCADE
+      )`,
+      // Índices para tablas de mascotas
+      `CREATE INDEX IF NOT EXISTS idx_pets_owner_id ON pets(owner_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_care_sessions_pet_id ON care_sessions(pet_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_care_sessions_sitter_id ON care_sessions(sitter_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_care_sessions_start_time ON care_sessions(start_time)`,
+      `CREATE INDEX IF NOT EXISTS idx_session_reports_care_session_id ON session_reports(care_session_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_session_reports_pet_id ON session_reports(pet_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_locations_owner_id ON locations(owner_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_locations_pet_id ON locations(pet_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_photos_pet_id ON photos(pet_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_photos_care_session_id ON photos(care_session_id)`,
     ];
 
     const results = [];
@@ -321,6 +408,12 @@ export class SeedService {
       { email: 'therapist1@example.com', password: '123456', role: 'therapist' },
       { email: 'therapist2@example.com', password: '123456', role: 'therapist' },
       { email: 'admin@example.com', password: '123456', role: 'therapist' },
+      // Usuarios para sistema de mascotas
+      { email: 'owner1@example.com', password: '123456', role: 'owner' },
+      { email: 'owner2@example.com', password: '123456', role: 'owner' },
+      { email: 'owner3@example.com', password: '123456', role: 'owner' },
+      { email: 'sitter1@example.com', password: '123456', role: 'sitter' },
+      { email: 'sitter2@example.com', password: '123456', role: 'sitter' },
     ];
 
     const createdUsers = [];
@@ -465,6 +558,309 @@ export class SeedService {
     }
   }
 
+  async seedPets() {
+    // Primero necesitamos usuarios con rol 'owner'
+    const owners = await this.dataSource.query(
+      `SELECT id FROM "user" WHERE role = 'owner' LIMIT 5`
+    );
+
+    if (owners.length === 0) {
+      return {
+        message: 'No owners found. Please create users with role "owner" first.',
+        pets: 0,
+      };
+    }
+
+    const petsData = [
+      { name: 'Max', species: 'Perro', breed: 'Labrador', age: 3, ownerId: owners[0].id },
+      { name: 'Luna', species: 'Gato', breed: 'Persa', age: 2, ownerId: owners[0].id },
+      { name: 'Rocky', species: 'Perro', breed: 'Bulldog', age: 5, ownerId: owners[1]?.id || owners[0].id },
+      { name: 'Mia', species: 'Gato', breed: 'Siames', age: 1, ownerId: owners[1]?.id || owners[0].id },
+      { name: 'Charlie', species: 'Perro', breed: 'Golden Retriever', age: 4, ownerId: owners[2]?.id || owners[0].id },
+      { name: 'Simba', species: 'Gato', breed: 'Maine Coon', age: 2, ownerId: owners[2]?.id || owners[0].id },
+      { name: 'Bella', species: 'Perro', breed: 'Chihuahua', age: 6, ownerId: owners[3]?.id || owners[0].id },
+      { name: 'Oliver', species: 'Gato', breed: 'British Shorthair', age: 3, ownerId: owners[3]?.id || owners[0].id },
+    ];
+
+    const createdPets = [];
+    for (const petData of petsData) {
+      try {
+        const result = await this.dataSource.query(
+          `INSERT INTO pets (name, species, breed, age, owner_id) 
+           VALUES ($1, $2, $3, $4, $5) 
+           RETURNING id, name, species`,
+          [petData.name, petData.species, petData.breed, petData.age, petData.ownerId]
+        );
+        createdPets.push(result[0]);
+      } catch (error) {
+        console.error(`Error creating pet ${petData.name}:`, error.message);
+      }
+    }
+
+    return {
+      message: 'Pets seeded successfully',
+      pets: createdPets,
+      total: createdPets.length,
+    };
+  }
+
+  async seedCareSessions() {
+    const pets = await this.dataSource.query(`SELECT id, name FROM pets LIMIT 10`);
+    const sitters = await this.dataSource.query(
+      `SELECT id FROM "user" WHERE role = 'sitter' LIMIT 3`
+    );
+
+    if (pets.length === 0 || sitters.length === 0) {
+      return {
+        message: 'No pets or sitters found. Please seed pets and create sitter users first.',
+        sessions: 0,
+      };
+    }
+
+    const createdSessions = [];
+    const now = new Date();
+
+    for (let i = 0; i < 15; i++) {
+      const pet = pets[Math.floor(Math.random() * pets.length)];
+      const sitter = sitters[Math.floor(Math.random() * sitters.length)];
+      const startTime = new Date(now);
+      startTime.setDate(startTime.getDate() + i);
+      startTime.setHours(9 + (i % 8), 0, 0, 0);
+
+      const endTime = new Date(startTime);
+      endTime.setHours(startTime.getHours() + 2);
+
+      const statuses = ['scheduled', 'in-progress', 'completed', 'cancelled'];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+
+      try {
+        const result = await this.dataSource.query(
+          `INSERT INTO care_sessions (pet_id, sitter_id, start_time, end_time, status, notes)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING id, pet_id, status`,
+          [
+            pet.id,
+            sitter.id,
+            startTime.toISOString(),
+            endTime.toISOString(),
+            status,
+            `Sesión de cuidado para ${pet.name}`,
+          ]
+        );
+        createdSessions.push(result[0]);
+      } catch (error) {
+        console.error(`Error creating care session:`, error.message);
+      }
+    }
+
+    return {
+      message: 'Care sessions seeded successfully',
+      sessions: createdSessions,
+      total: createdSessions.length,
+    };
+  }
+
+  async seedSessionReports() {
+    const careSessions = await this.dataSource.query(
+      `SELECT cs.id, cs.pet_id, cs.sitter_id, p.name as pet_name
+       FROM care_sessions cs
+       JOIN pets p ON cs.pet_id = p.id
+       WHERE cs.status = 'completed'
+       LIMIT 10`
+    );
+
+    if (careSessions.length === 0) {
+      return {
+        message: 'No completed care sessions found. Please seed care sessions first.',
+        reports: 0,
+      };
+    }
+
+    const activities = [
+      ['Juego con pelota', 'Paseo en el parque', 'Tiempo de descanso'],
+      ['Alimentación', 'Juego interactivo', 'Cepillado'],
+      ['Ejercicio físico', 'Socialización', 'Entrenamiento básico'],
+      ['Tiempo de juego', 'Relajación', 'Observación de comportamiento'],
+    ];
+
+    const moods = ['happy', 'calm', 'anxious', 'playful', 'tired'];
+    const createdReports = [];
+
+    for (const session of careSessions) {
+      const activitySet = activities[Math.floor(Math.random() * activities.length)];
+      const mood = moods[Math.floor(Math.random() * moods.length)];
+
+      const feeding = Math.random() > 0.5 ? {
+        time: '12:00',
+        amount: '200g',
+        foodType: 'Croquetas premium',
+      } : null;
+
+      const medication = Math.random() > 0.7 ? {
+        time: '08:00',
+        medication: 'Vitamina D',
+        dosage: '1 tableta',
+      } : null;
+
+      try {
+        const result = await this.dataSource.query(
+          `INSERT INTO session_reports (care_session_id, pet_id, sitter_id, report_date, activities, notes, mood, feeding, medication)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           RETURNING id, care_session_id`,
+          [
+            session.id,
+            session.pet_id,
+            session.sitter_id,
+            new Date().toISOString().split('T')[0],
+            activitySet,
+            `Reporte de sesión para ${session.pet_name}. Todo salió bien.`,
+            mood,
+            feeding ? JSON.stringify(feeding) : null,
+            medication ? JSON.stringify(medication) : null,
+          ]
+        );
+        createdReports.push(result[0]);
+      } catch (error) {
+        console.error(`Error creating session report:`, error.message);
+      }
+    }
+
+    return {
+      message: 'Session reports seeded successfully',
+      reports: createdReports,
+      total: createdReports.length,
+    };
+  }
+
+  async seedLocations() {
+    const owners = await this.dataSource.query(
+      `SELECT id FROM "user" WHERE role = 'owner' LIMIT 5`
+    );
+    const pets = await this.dataSource.query(`SELECT id FROM pets LIMIT 5`);
+
+    if (owners.length === 0) {
+      return {
+        message: 'No owners found. Please create users with role "owner" first.',
+        locations: 0,
+      };
+    }
+
+    const locationsData = [
+      { name: 'Casa Principal', address: 'Av. Providencia 123, Santiago', lat: -33.4489, lng: -70.6693, type: 'home', ownerId: owners[0].id, petId: pets[0]?.id },
+      { name: 'Veterinaria Central', address: 'Av. Las Condes 456, Las Condes', lat: -33.4167, lng: -70.5833, type: 'vet', ownerId: owners[0].id },
+      { name: 'Parque Los Dominicos', address: 'Av. Apoquindo 9085, Las Condes', lat: -33.4000, lng: -70.5500, type: 'park', ownerId: owners[0].id, petId: pets[0]?.id },
+      { name: 'Peluquería Canina', address: 'Av. Vitacura 2800, Vitacura', lat: -33.3833, lng: -70.5333, type: 'grooming', ownerId: owners[1]?.id || owners[0].id },
+      { name: 'Casa de Verano', address: 'Av. Costanera 1000, Viña del Mar', lat: -33.0246, lng: -71.5518, type: 'home', ownerId: owners[1]?.id || owners[0].id, petId: pets[1]?.id },
+    ];
+
+    const createdLocations = [];
+    for (const locData of locationsData) {
+      try {
+        const result = await this.dataSource.query(
+          `INSERT INTO locations (name, address, latitude, longitude, pet_id, owner_id, type)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING id, name, type`,
+          [
+            locData.name,
+            locData.address,
+            locData.lat,
+            locData.lng,
+            locData.petId || null,
+            locData.ownerId,
+            locData.type,
+          ]
+        );
+        createdLocations.push(result[0]);
+      } catch (error) {
+        console.error(`Error creating location ${locData.name}:`, error.message);
+      }
+    }
+
+    return {
+      message: 'Locations seeded successfully',
+      locations: createdLocations,
+      total: createdLocations.length,
+    };
+  }
+
+  async seedPhotos() {
+    const pets = await this.dataSource.query(`SELECT id FROM pets LIMIT 5`);
+    const careSessions = await this.dataSource.query(`SELECT id FROM care_sessions LIMIT 5`);
+    const users = await this.dataSource.query(`SELECT id FROM "user" LIMIT 3`);
+
+    if (pets.length === 0 || users.length === 0) {
+      return {
+        message: 'No pets or users found. Please seed pets first.',
+        photos: 0,
+      };
+    }
+
+    const photosData = [
+      { url: 'https://example.com/photos/pet1.jpg', petId: pets[0].id, uploadedBy: users[0].id, description: 'Foto de perfil' },
+      { url: 'https://example.com/photos/pet2.jpg', petId: pets[0].id, uploadedBy: users[0].id, description: 'Jugando en el parque' },
+      { url: 'https://example.com/photos/session1.jpg', careSessionId: careSessions[0]?.id, uploadedBy: users[1]?.id || users[0].id, description: 'Durante la sesión' },
+      { url: 'https://example.com/photos/pet3.jpg', petId: pets[1]?.id || pets[0].id, uploadedBy: users[0].id },
+    ];
+
+    const createdPhotos = [];
+    for (const photoData of photosData) {
+      try {
+        const result = await this.dataSource.query(
+          `INSERT INTO photos (url, pet_id, care_session_id, uploaded_by, description)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING id, url`,
+          [
+            photoData.url,
+            photoData.petId || null,
+            photoData.careSessionId || null,
+            photoData.uploadedBy,
+            photoData.description || null,
+          ]
+        );
+        createdPhotos.push(result[0]);
+      } catch (error) {
+        console.error(`Error creating photo:`, error.message);
+      }
+    }
+
+    return {
+      message: 'Photos seeded successfully',
+      photos: createdPhotos,
+      total: createdPhotos.length,
+    };
+  }
+
+  async seedPetsData() {
+    try {
+      // Seed pets
+      const petsResult = await this.seedPets();
+      
+      // Seed care sessions
+      const sessionsResult = await this.seedCareSessions();
+      
+      // Seed session reports
+      const reportsResult = await this.seedSessionReports();
+      
+      // Seed locations
+      const locationsResult = await this.seedLocations();
+      
+      // Seed photos
+      const photosResult = await this.seedPhotos();
+      
+      return {
+        message: 'Pets data seeded successfully',
+        pets: petsResult,
+        careSessions: sessionsResult,
+        sessionReports: reportsResult,
+        locations: locationsResult,
+        photos: photosResult,
+      };
+    } catch (error) {
+      console.error('Error in seedPetsData:', error);
+      throw error;
+    }
+  }
+
   async seedAll() {
     try {
       // First create tables
@@ -477,14 +873,18 @@ export class SeedService {
       // Then seed users
       const usersResult = await this.seedUsers();
       
-      // Finally seed data
+      // Seed therapy data
       const dataResult = await this.seedData();
+      
+      // Seed pets data
+      const petsDataResult = await this.seedPetsData();
       
       return {
         message: 'Database initialized and seeded successfully',
         tables: tablesResult,
         users: usersResult,
-        data: dataResult,
+        therapyData: dataResult,
+        petsData: petsDataResult,
       };
     } catch (error) {
       console.error('Error in seedAll:', error);

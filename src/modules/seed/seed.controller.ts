@@ -11,7 +11,7 @@ export class SeedController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ 
     summary: 'Initialize database',
-    description: 'Creates all tables and seeds the database with initial data (users, patients, sessions, transcriptions). This is the main endpoint to set up the database from scratch.'
+    description: 'Creates all tables and seeds the database with initial data (users, patients, sessions, transcriptions, pets, care sessions, session reports, locations, photos). This is the main endpoint to set up the database from scratch.'
   })
   @ApiResponse({ 
     status: 200, 
@@ -22,7 +22,8 @@ export class SeedController {
         message: { type: 'string', example: 'Database initialized and seeded successfully' },
         tables: { type: 'object' },
         users: { type: 'object' },
-        data: { type: 'object' }
+        therapyData: { type: 'object' },
+        petsData: { type: 'object' }
       }
     }
   })
@@ -182,6 +183,34 @@ export class SeedController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Post('pets')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Seed pets data',
+    description: 'Creates example pets. Requires users with role "owner" to exist first.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Pets seeded successfully'
+  })
+  async seedPets() {
+    return await this.seedService.seedPets();
+  }
+
+  @Post('pets-data')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Seed all pets data',
+    description: 'Creates example data for pets system: pets, care sessions, session reports, locations, and photos. Requires users with roles "owner" and "sitter" to exist first.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Pets data seeded successfully'
+  })
+  async seedPetsData() {
+    return await this.seedService.seedPetsData();
   }
 }
 

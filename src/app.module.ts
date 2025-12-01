@@ -4,7 +4,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PingController } from './ping.controller';
-import { User, Session, EmotionLog, EmotionAnalysis, Patient, Transcription } from './entities';
+import { 
+  User, 
+  Session, 
+  EmotionLog, 
+  EmotionAnalysis, 
+  Patient, 
+  Transcription,
+  Pet,
+  CareSession,
+  SessionReport,
+  Location,
+  Photo
+} from './entities';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
@@ -39,7 +51,19 @@ import { SeedModule } from './modules/seed/seed.module';
             database: dbUrl.pathname.slice(1),
             synchronize: !isProduction,
             autoLoadEntities: true,
-            entities: [User, Session, EmotionLog, EmotionAnalysis, Patient, Transcription],
+            entities: [
+              User, 
+              Session, 
+              EmotionLog, 
+              EmotionAnalysis, 
+              Patient, 
+              Transcription,
+              Pet,
+              CareSession,
+              SessionReport,
+              Location,
+              Photo
+            ],
             ssl: isProduction ? { rejectUnauthorized: false } : false,
           };
         }

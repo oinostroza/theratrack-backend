@@ -4,6 +4,8 @@ import { EmotionLog } from './emotion-log.entity';
 export enum UserRole {
   PATIENT = 'patient',
   THERAPIST = 'therapist',
+  OWNER = 'owner',
+  SITTER = 'sitter',
 }
 
 @Entity()
