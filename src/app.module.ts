@@ -13,6 +13,7 @@ import { EmotionsModule } from './modules/emotions/emotions.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { AiAnalysisModule } from './modules/ai-analysis/ai-analysis.module';
 import { TranscriptionsModule } from './modules/transcriptions/transcriptions.module';
+import { SeedModule } from './modules/seed/seed.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { TranscriptionsModule } from './modules/transcriptions/transcriptions.mo
     QueueModule,
     AiAnalysisModule,
     TranscriptionsModule,
+    SeedModule,
   ],
   controllers: [AppController, PingController],
   providers: [AppService],
