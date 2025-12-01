@@ -6,6 +6,7 @@ export enum UserRole {
   THERAPIST = 'therapist',
   OWNER = 'owner',
   SITTER = 'sitter',
+  ADMIN = 'admin',
 }
 
 @Entity()

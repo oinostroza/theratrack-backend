@@ -217,7 +217,7 @@ export class SeedService {
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        role VARCHAR(50) DEFAULT 'patient' CHECK (role IN ('patient', 'therapist', 'owner', 'sitter'))
+        role VARCHAR(50) DEFAULT 'patient' CHECK (role IN ('patient', 'therapist', 'owner', 'sitter', 'admin'))
       )`,
       `CREATE TABLE IF NOT EXISTS patients (
         id SERIAL PRIMARY KEY,
@@ -407,7 +407,7 @@ export class SeedService {
       { email: 'patient2@example.com', password: '123456', role: 'patient' },
       { email: 'therapist1@example.com', password: '123456', role: 'therapist' },
       { email: 'therapist2@example.com', password: '123456', role: 'therapist' },
-      { email: 'admin@example.com', password: '123456', role: 'therapist' },
+      { email: 'admin@example.com', password: '123456', role: 'admin' },
       // Usuarios para sistema de mascotas
       { email: 'owner1@example.com', password: '123456', role: 'owner' },
       { email: 'owner2@example.com', password: '123456', role: 'owner' },
@@ -941,7 +941,7 @@ export class SeedService {
           id SERIAL PRIMARY KEY,
           email VARCHAR(255) UNIQUE NOT NULL,
           password VARCHAR(255) NOT NULL,
-          role VARCHAR(50) DEFAULT 'patient' CHECK (role IN ('patient', 'therapist', 'owner', 'sitter'))
+          role VARCHAR(50) DEFAULT 'patient' CHECK (role IN ('patient', 'therapist', 'owner', 'sitter', 'admin'))
         )`,
         
         // Tablas de terapia

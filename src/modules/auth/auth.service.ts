@@ -38,8 +38,9 @@ export class AuthService {
     return {
       message: 'Login successful',
       user: {
-        id: user.id,
+        id: user.id.toString(),
         email: user.email,
+        name: user.email.split('@')[0], // Usar la parte antes del @ como nombre
         role: user.role,
       },
       access_token: token,
@@ -73,8 +74,9 @@ export class AuthService {
     return {
       message: 'User registered successfully',
       user: {
-        id: user.id,
+        id: user.id.toString(),
         email: user.email,
+        name: user.email.split('@')[0], // Usar la parte antes del @ como nombre
         role: user.role,
       },
       access_token: token,
