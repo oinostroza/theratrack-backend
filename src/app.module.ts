@@ -22,17 +22,41 @@ import { TranscriptionsModule } from './modules/transcriptions/transcriptions.mo
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 5432),
-        username: configService.get('DB_USERNAME', 'postgres'),
-        password: configService.get('DB_PASSWORD', '1234'),
-        database: configService.get('DB_DATABASE', 'theratrack'),
-        synchronize: configService.get('NODE_ENV') !== 'production',
-        autoLoadEntities: true,
-        entities: [User, Session, EmotionLog, EmotionAnalysis, Patient, Transcription],
-      }),
+      useFactory: (configService: ConfigService) => {
+        const isProduction = configService.get('NODE_ENV') === 'production';
+        
+        // Handle DATABASE_URL if provided (common in Render, Heroku, etc.)
+        const databaseUrl = configService.get('DATABASE_URL');
+        if (databaseUrl) {
+          const dbUrl = new URL(databaseUrl);
+          return {
+            type: 'postgres',
+            host: dbUrl.hostname,
+            port: parseInt(dbUrl.port),
+            username: dbUrl.username,
+            password: dbUrl.password,
+            database: dbUrl.pathname.slice(1),
+            synchronize: !isProduction,
+            autoLoadEntities: true,
+            entities: [User, Session, EmotionLog, EmotionAnalysis, Patient, Transcription],
+            ssl: isProduction ? { rejectUnauthorized: false } : false,
+          };
+        }
+        
+        // Use individual environment variables
+        return {
+          type: 'postgres',
+          host: configService.get('DB_HOST', 'localhost'),
+          port: configService.get('DB_PORT', 5432),
+          username: configService.get('DB_USERNAME', 'postgres'),
+          password: configService.get('DB_PASSWORD', '1234'),
+          database: configService.get('DB_DATABASE', 'theratrack'),
+          synchronize: !isProduction,
+          autoLoadEntities: true,
+          entities: [User, Session, EmotionLog, EmotionAnalysis, Patient, Transcription],
+          ssl: isProduction ? { rejectUnauthorized: false } : false,
+        };
+      },
       inject: [ConfigService],
     }),
     AuthModule,
