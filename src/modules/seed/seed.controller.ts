@@ -212,5 +212,65 @@ export class SeedController {
   async seedPetsData() {
     return await this.seedService.seedPetsData();
   }
+
+  @Post('complete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Complete database reset and seed',
+    description: '⚠️ WARNING: This will DELETE ALL existing tables and data, then recreate everything from scratch. Creates all tables (therapy + pets) and seeds all data. Use this to completely reset the database.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Database completely reset and seeded successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Database completely reset and seeded successfully' },
+        summary: {
+          type: 'object',
+          properties: {
+            users: { type: 'number' },
+            therapy: {
+              type: 'object',
+              properties: {
+                patients: { type: 'number' },
+                sessions: { type: 'number' },
+                transcriptions: { type: 'number' }
+              }
+            },
+            pets: {
+              type: 'object',
+              properties: {
+                pets: { type: 'number' },
+                careSessions: { type: 'number' },
+                sessionReports: { type: 'number' },
+                locations: { type: 'number' },
+                photos: { type: 'number' }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 500, 
+    description: 'Internal server error'
+  })
+  async seedComplete() {
+    try {
+      return await this.seedService.seedComplete();
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: error.message || 'Error resetting and seeding database',
+          error: 'Internal Server Error',
+          details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
 
