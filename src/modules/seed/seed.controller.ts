@@ -138,5 +138,50 @@ export class SeedController {
   async seedAll() {
     return await this.seedService.seedAll();
   }
+
+  @Post('calendar')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Seed calendar sessions for December',
+    description: 'Generates many sessions for December, distributed across weekdays for multiple patients. Includes past dates (before today) and future dates. Creates 3-6 sessions per weekday, fewer on Saturdays, none on Sundays.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Calendar sessions created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Calendar sessions for December created successfully' },
+        summary: {
+          type: 'object',
+          properties: {
+            totalGenerated: { type: 'number', example: 150 },
+            created: { type: 'number', example: 148 },
+            errors: { type: 'number', example: 2 },
+            patientsUsed: { type: 'number', example: 20 }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 500, 
+    description: 'Internal server error'
+  })
+  async seedCalendar() {
+    try {
+      return await this.seedService.seedCalendar();
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: error.message || 'Error seeding calendar',
+          error: 'Internal Server Error',
+          details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
 

@@ -113,6 +113,94 @@ function generateSessionsForPatient(patientId: number, startDate: Date): Session
   return sessions;
 }
 
+function generateCalendarSessionsForDecember(patientIds: number[]): SessionData[] {
+  const sessions: SessionData[] = [];
+  const usedTimes = new Set<string>();
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  
+  // Crear fecha de inicio de diciembre (1 de diciembre)
+  const decemberStart = new Date(currentYear, 11, 1); // Mes 11 = Diciembre (0-indexed)
+  
+  // Crear fecha de fin de diciembre (31 de diciembre)
+  const decemberEnd = new Date(currentYear, 11, 31);
+  
+  // Horarios más amplios para tener más sesiones
+  const extendedSessionTimes = [
+    { start: '08:00', end: '09:00' },
+    { start: '09:00', end: '10:00' },
+    { start: '10:00', end: '11:00' },
+    { start: '10:30', end: '11:30' },
+    { start: '11:00', end: '12:00' },
+    { start: '14:00', end: '15:00' },
+    { start: '15:00', end: '16:00' },
+    { start: '15:30', end: '16:30' },
+    { start: '16:00', end: '17:00' },
+    { start: '17:00', end: '18:00' },
+    { start: '18:00', end: '19:00' },
+    { start: '18:30', end: '19:30' },
+    { start: '19:00', end: '20:00' }
+  ];
+  
+  // Iterar por cada día de diciembre
+  for (let day = 1; day <= 31; day++) {
+    const currentDate = new Date(currentYear, 11, day);
+    const dayOfWeek = currentDate.getDay();
+    
+    // Saltar domingos (0), pero incluir sábados (6) con menos frecuencia
+    if (dayOfWeek === 0) continue;
+    
+    // Determinar cuántas sesiones crear este día
+    let sessionsPerDay = 0;
+    if (dayOfWeek === 6) { // Sábado
+      sessionsPerDay = Math.random() > 0.7 ? 2 : 0; // 30% de probabilidad, máximo 2 sesiones
+    } else { // Lunes a Viernes
+      // Entre 3 y 6 sesiones por día laboral
+      sessionsPerDay = Math.floor(Math.random() * 4) + 3;
+    }
+    
+    // Crear sesiones para este día
+    for (let i = 0; i < sessionsPerDay && i < extendedSessionTimes.length; i++) {
+      // Seleccionar un paciente aleatorio
+      const patientId = patientIds[Math.floor(Math.random() * patientIds.length)];
+      
+      // Seleccionar un horario disponible
+      let attempts = 0;
+      let sessionTime;
+      let timeKey;
+      
+      do {
+        sessionTime = extendedSessionTimes[Math.floor(Math.random() * extendedSessionTimes.length)];
+        timeKey = `${currentDate.toISOString().split('T')[0]}-${sessionTime.start}`;
+        attempts++;
+      } while (usedTimes.has(timeKey) && attempts < 50);
+      
+      if (attempts < 50) {
+        usedTimes.add(timeKey);
+        
+        const fechaInicio = `${currentDate.toISOString().split('T')[0]}T${sessionTime.start}:00`;
+        const fechaFin = `${currentDate.toISOString().split('T')[0]}T${sessionTime.end}:00`;
+        
+        // Para fechas pasadas, marcar más como pagadas
+        const isPast = currentDate < today;
+        const pagado = isPast ? Math.random() > 0.2 : Math.random() > 0.5; // 80% pagadas si es pasado, 50% si es futuro
+        
+        sessions.push({
+          patientId,
+          fechaInicio,
+          fechaFin,
+          conceptoPrincipal: sessionTypes[Math.floor(Math.random() * sessionTypes.length)],
+          precio: prices[Math.floor(Math.random() * prices.length)],
+          pagado,
+          notasDelTerapeuta: isPast ? 'Sesión completada' : undefined
+        });
+      }
+    }
+  }
+  
+  return sessions;
+}
+
 @Injectable()
 export class SeedService {
   constructor(
@@ -326,6 +414,55 @@ export class SeedService {
         transcriptions: sessionsForTranscription.length,
       },
     };
+  }
+
+  async seedCalendar() {
+    try {
+      // Obtener todos los pacientes existentes
+      const allPatients = await this.patientService.findAll();
+      
+      if (allPatients.length === 0) {
+        return {
+          message: 'No patients found. Please seed patients first.',
+          sessions: 0,
+        };
+      }
+      
+      const patientIds = allPatients.map(p => p.id);
+      
+      // Generar sesiones para diciembre
+      const calendarSessions = generateCalendarSessionsForDecember(patientIds);
+      
+      const createdSessions = [];
+      let errors = 0;
+      
+      // Crear las sesiones
+      for (const sessionData of calendarSessions) {
+        try {
+          const session = await this.sessionsService.create(sessionData);
+          createdSessions.push(session);
+        } catch (error) {
+          errors++;
+          // Ignorar errores de duplicados (misma fecha/hora para mismo paciente)
+          if (!error.message?.includes('duplicate') && !error.message?.includes('unique')) {
+            console.error(`Error creating calendar session:`, error.message);
+          }
+        }
+      }
+      
+      return {
+        message: `Calendar sessions for December created successfully`,
+        summary: {
+          totalGenerated: calendarSessions.length,
+          created: createdSessions.length,
+          errors,
+          patientsUsed: patientIds.length,
+        },
+      };
+    } catch (error) {
+      console.error('Error in seedCalendar:', error);
+      throw error;
+    }
   }
 
   async seedAll() {
