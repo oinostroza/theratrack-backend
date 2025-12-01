@@ -1113,18 +1113,18 @@ export class SeedService {
       return {
         message: 'Database completely reset and seeded successfully',
         summary: {
-          users: usersResult.total || usersResult.users?.length || 0,
+          users: usersResult.total ?? (Array.isArray(usersResult.users) ? usersResult.users.length : 0),
           therapy: {
             patients: therapyDataResult.summary?.patients || 0,
             sessions: therapyDataResult.summary?.sessions || 0,
             transcriptions: therapyDataResult.summary?.transcriptions || 0,
           },
           pets: {
-            pets: petsDataResult.pets?.total || petsDataResult.pets?.pets?.length || 0,
-            careSessions: petsDataResult.careSessions?.total || petsDataResult.careSessions?.sessions?.length || 0,
-            sessionReports: petsDataResult.sessionReports?.total || petsDataResult.sessionReports?.reports?.length || 0,
-            locations: petsDataResult.locations?.total || petsDataResult.locations?.locations?.length || 0,
-            photos: petsDataResult.photos?.total || petsDataResult.photos?.photos?.length || 0,
+            pets: petsDataResult.pets?.total ?? (Array.isArray(petsDataResult.pets?.pets) ? petsDataResult.pets.pets.length : 0),
+            careSessions: petsDataResult.careSessions?.total ?? (Array.isArray(petsDataResult.careSessions?.sessions) ? petsDataResult.careSessions.sessions.length : 0),
+            sessionReports: petsDataResult.sessionReports?.total ?? (Array.isArray(petsDataResult.sessionReports?.reports) ? petsDataResult.sessionReports.reports.length : 0),
+            locations: petsDataResult.locations?.total ?? (Array.isArray(petsDataResult.locations?.locations) ? petsDataResult.locations.locations.length : 0),
+            photos: petsDataResult.photos?.total ?? (Array.isArray(petsDataResult.photos?.photos) ? petsDataResult.photos.photos.length : 0),
           },
         },
         details: {
