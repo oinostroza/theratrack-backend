@@ -45,6 +45,9 @@ export class CareSession {
   })
   status: CareSessionStatus;
 
+  @Column({ type: 'boolean', default: false })
+  paid: boolean;
+
   @Column({ type: 'text', nullable: true })
   notes?: string;
 

@@ -31,6 +31,10 @@ export class CreateCareSessionDto {
   status?: CareSessionStatus;
 
   @IsOptional()
+  @IsBoolean()
+  paid?: boolean;
+
+  @IsOptional()
   @IsString()
   @MaxLength(1000)
   notes?: string;

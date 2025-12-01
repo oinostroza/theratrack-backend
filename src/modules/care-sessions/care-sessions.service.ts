@@ -33,7 +33,7 @@ export class CareSessionsService {
   async findAll(): Promise<CareSession[]> {
     this.logger.log('Fetching all care sessions');
     const sessions = await this.careSessionRepository.find({
-      relations: ['pet', 'sitter'],
+      relations: ['pet', 'pet.owner', 'sitter'],
       order: { startTime: 'DESC' },
     });
     this.logger.log(`Found ${sessions.length} care sessions`);
@@ -44,7 +44,7 @@ export class CareSessionsService {
     this.logger.log(`Fetching care session with ID: ${id}`);
     const session = await this.careSessionRepository.findOne({
       where: { id },
-      relations: ['pet', 'sitter', 'sessionReports', 'photos'],
+      relations: ['pet', 'pet.owner', 'sitter', 'sessionReports', 'photos'],
     });
     if (!session) {
       this.logger.warn(`Care session with ID ${id} not found`);
@@ -83,7 +83,7 @@ export class CareSessionsService {
     this.logger.log(`Fetching care sessions for pet ID: ${petId}`);
     const sessions = await this.careSessionRepository.find({
       where: { petId },
-      relations: ['pet', 'sitter'],
+      relations: ['pet', 'pet.owner', 'sitter'],
       order: { startTime: 'DESC' },
     });
     this.logger.log(`Found ${sessions.length} care sessions for pet ${petId}`);
@@ -94,7 +94,7 @@ export class CareSessionsService {
     this.logger.log(`Fetching care sessions for sitter ID: ${sitterId}`);
     const sessions = await this.careSessionRepository.find({
       where: { sitterId },
-      relations: ['pet', 'sitter'],
+      relations: ['pet', 'pet.owner', 'sitter'],
       order: { startTime: 'DESC' },
     });
     this.logger.log(`Found ${sessions.length} care sessions for sitter ${sitterId}`);

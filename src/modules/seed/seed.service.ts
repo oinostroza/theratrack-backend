@@ -293,6 +293,7 @@ export class SeedService {
         start_time TIMESTAMP NOT NULL,
         end_time TIMESTAMP,
         status VARCHAR(50) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in-progress', 'completed', 'cancelled')),
+        paid BOOLEAN DEFAULT FALSE,
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -684,17 +685,21 @@ export class SeedService {
           status = Math.random() > 0.3 ? 'scheduled' : statuses[Math.floor(Math.random() * statuses.length)];
         }
 
+        // Sesiones completadas tienen más probabilidad de estar pagadas
+        const paid = status === 'completed' ? Math.random() > 0.3 : Math.random() > 0.7;
+        
         try {
           const result = await this.dataSource.query(
-            `INSERT INTO care_sessions (pet_id, sitter_id, start_time, end_time, status, notes)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING id, pet_id, sitter_id, status`,
+            `INSERT INTO care_sessions (pet_id, sitter_id, start_time, end_time, status, paid, notes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, pet_id, sitter_id, status, paid`,
             [
               pet.id,
               sitter.id,
               startTime.toISOString(),
               endTime.toISOString(),
               status,
+              paid,
               `Sesión de cuidado para ${pet.name}. ${status === 'completed' ? 'Sesión completada exitosamente.' : 'Sesión programada.'}`,
             ]
           );
@@ -1219,6 +1224,7 @@ export class SeedService {
           start_time TIMESTAMP NOT NULL,
           end_time TIMESTAMP,
           status VARCHAR(50) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in-progress', 'completed', 'cancelled')),
+          paid BOOLEAN DEFAULT FALSE,
           notes TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
