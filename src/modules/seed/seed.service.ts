@@ -403,25 +403,40 @@ export class SeedService {
 
   async seedUsers() {
     const usersData = [
-      { email: 'patient1@example.com', password: '123456', role: 'patient' },
-      { email: 'patient2@example.com', password: '123456', role: 'patient' },
-      { email: 'therapist1@example.com', password: '123456', role: 'therapist' },
-      { email: 'therapist2@example.com', password: '123456', role: 'therapist' },
-      { email: 'admin@example.com', password: '123456', role: 'admin' },
-      // Usuarios para sistema de mascotas
-      { email: 'owner1@example.com', password: '123456', role: 'owner' },
-      { email: 'owner2@example.com', password: '123456', role: 'owner' },
-      { email: 'owner3@example.com', password: '123456', role: 'owner' },
-      { email: 'sitter1@example.com', password: '123456', role: 'sitter' },
-      { email: 'sitter2@example.com', password: '123456', role: 'sitter' },
+      // Admin
+      { email: 'admin@example.com', password: '123456', role: 'admin', name: 'Administrador' },
+      
+      // Therapists
+      { email: 'therapist1@example.com', password: '123456', role: 'therapist', name: 'Dr. María González' },
+      { email: 'therapist2@example.com', password: '123456', role: 'therapist', name: 'Dr. Carlos Rodríguez' },
+      { email: 'therapist3@example.com', password: '123456', role: 'therapist', name: 'Dra. Ana López' },
+      
+      // Patients
+      { email: 'patient1@example.com', password: '123456', role: 'patient', name: 'Juan Pérez' },
+      { email: 'patient2@example.com', password: '123456', role: 'patient', name: 'María Silva' },
+      { email: 'patient3@example.com', password: '123456', role: 'patient', name: 'Pedro Martínez' },
+      
+      // Owners
+      { email: 'owner1@example.com', password: '123456', role: 'owner', name: 'Roberto Fernández' },
+      { email: 'owner2@example.com', password: '123456', role: 'owner', name: 'Carmen Vargas' },
+      { email: 'owner3@example.com', password: '123456', role: 'owner', name: 'Diego Morales' },
+      { email: 'owner4@example.com', password: '123456', role: 'owner', name: 'Patricia Herrera' },
+      { email: 'owner5@example.com', password: '123456', role: 'owner', name: 'Francisco Torres' },
+      
+      // Sitters
+      { email: 'sitter1@example.com', password: '123456', role: 'sitter', name: 'Laura Martínez' },
+      { email: 'sitter2@example.com', password: '123456', role: 'sitter', name: 'Andrés Soto' },
+      { email: 'sitter3@example.com', password: '123456', role: 'sitter', name: 'Isabella Ruiz' },
+      { email: 'sitter4@example.com', password: '123456', role: 'sitter', name: 'Sebastián Castro' },
     ];
 
     const createdUsers = [];
     for (const userData of usersData) {
       try {
+        // Eliminar usuario existente si existe
         const existingUser = await this.usersService.findByEmail(userData.email);
         if (existingUser) {
-          continue;
+          await this.dataSource.query(`DELETE FROM "user" WHERE email = $1`, [userData.email]);
         }
 
         const saltRounds = 10;
@@ -433,7 +448,7 @@ export class SeedService {
           role: userData.role,
         });
         
-        createdUsers.push({ id: user.id, email: user.email, role: user.role });
+        createdUsers.push({ id: user.id, email: user.email, role: user.role, name: userData.name });
       } catch (error) {
         console.error(`Error creating user ${userData.email}:`, error.message);
       }
@@ -561,7 +576,7 @@ export class SeedService {
   async seedPets() {
     // Primero necesitamos usuarios con rol 'owner'
     const owners = await this.dataSource.query(
-      `SELECT id FROM "user" WHERE role = 'owner' LIMIT 5`
+      `SELECT id FROM "user" WHERE role = 'owner' ORDER BY id`
     );
 
     if (owners.length === 0) {
@@ -572,14 +587,28 @@ export class SeedService {
     }
 
     const petsData = [
-      { name: 'Max', species: 'Perro', breed: 'Labrador', age: 3, ownerId: owners[0].id },
-      { name: 'Luna', species: 'Gato', breed: 'Persa', age: 2, ownerId: owners[0].id },
-      { name: 'Rocky', species: 'Perro', breed: 'Bulldog', age: 5, ownerId: owners[1]?.id || owners[0].id },
-      { name: 'Mia', species: 'Gato', breed: 'Siames', age: 1, ownerId: owners[1]?.id || owners[0].id },
-      { name: 'Charlie', species: 'Perro', breed: 'Golden Retriever', age: 4, ownerId: owners[2]?.id || owners[0].id },
-      { name: 'Simba', species: 'Gato', breed: 'Maine Coon', age: 2, ownerId: owners[2]?.id || owners[0].id },
-      { name: 'Bella', species: 'Perro', breed: 'Chihuahua', age: 6, ownerId: owners[3]?.id || owners[0].id },
-      { name: 'Oliver', species: 'Gato', breed: 'British Shorthair', age: 3, ownerId: owners[3]?.id || owners[0].id },
+      // Owner 1
+      { name: 'Max', species: 'Perro', breed: 'Labrador Retriever', age: 3, ownerId: owners[0]?.id },
+      { name: 'Luna', species: 'Gato', breed: 'Persa', age: 2, ownerId: owners[0]?.id },
+      { name: 'Bobby', species: 'Perro', breed: 'Beagle', age: 1, ownerId: owners[0]?.id },
+      
+      // Owner 2
+      { name: 'Rocky', species: 'Perro', breed: 'Bulldog Francés', age: 5, ownerId: owners[1]?.id || owners[0]?.id },
+      { name: 'Mia', species: 'Gato', breed: 'Siamés', age: 1, ownerId: owners[1]?.id || owners[0]?.id },
+      
+      // Owner 3
+      { name: 'Charlie', species: 'Perro', breed: 'Golden Retriever', age: 4, ownerId: owners[2]?.id || owners[0]?.id },
+      { name: 'Simba', species: 'Gato', breed: 'Maine Coon', age: 2, ownerId: owners[2]?.id || owners[0]?.id },
+      { name: 'Nala', species: 'Gato', breed: 'Maine Coon', age: 2, ownerId: owners[2]?.id || owners[0]?.id },
+      
+      // Owner 4
+      { name: 'Bella', species: 'Perro', breed: 'Chihuahua', age: 6, ownerId: owners[3]?.id || owners[0]?.id },
+      { name: 'Coco', species: 'Perro', breed: 'Poodle', age: 3, ownerId: owners[3]?.id || owners[0]?.id },
+      
+      // Owner 5
+      { name: 'Oliver', species: 'Gato', breed: 'British Shorthair', age: 3, ownerId: owners[4]?.id || owners[0]?.id },
+      { name: 'Daisy', species: 'Perro', breed: 'Dachshund', age: 4, ownerId: owners[4]?.id || owners[0]?.id },
+      { name: 'Whiskers', species: 'Gato', breed: 'Ragdoll', age: 1, ownerId: owners[4]?.id || owners[0]?.id },
     ];
 
     const createdPets = [];
@@ -588,7 +617,7 @@ export class SeedService {
         const result = await this.dataSource.query(
           `INSERT INTO pets (name, species, breed, age, owner_id) 
            VALUES ($1, $2, $3, $4, $5) 
-           RETURNING id, name, species`,
+           RETURNING id, name, species, owner_id`,
           [petData.name, petData.species, petData.breed, petData.age, petData.ownerId]
         );
         createdPets.push(result[0]);
@@ -605,9 +634,9 @@ export class SeedService {
   }
 
   async seedCareSessions() {
-    const pets = await this.dataSource.query(`SELECT id, name FROM pets LIMIT 10`);
+    const pets = await this.dataSource.query(`SELECT id, name, owner_id FROM pets ORDER BY owner_id`);
     const sitters = await this.dataSource.query(
-      `SELECT id FROM "user" WHERE role = 'sitter' LIMIT 3`
+      `SELECT id FROM "user" WHERE role = 'sitter' ORDER BY id`
     );
 
     if (pets.length === 0 || sitters.length === 0) {
@@ -619,37 +648,63 @@ export class SeedService {
 
     const createdSessions = [];
     const now = new Date();
+    const statuses = ['scheduled', 'in-progress', 'completed', 'cancelled'];
+    const hours = [8, 9, 10, 11, 14, 15, 16, 17, 18];
 
-    for (let i = 0; i < 15; i++) {
-      const pet = pets[Math.floor(Math.random() * pets.length)];
-      const sitter = sitters[Math.floor(Math.random() * sitters.length)];
-      const startTime = new Date(now);
-      startTime.setDate(startTime.getDate() + i);
-      startTime.setHours(9 + (i % 8), 0, 0, 0);
+    // Crear sesiones para los próximos 30 días
+    for (let day = 0; day < 30; day++) {
+      const currentDate = new Date(now);
+      currentDate.setDate(currentDate.getDate() + day);
+      
+      // Saltar domingos
+      if (currentDate.getDay() === 0) continue;
+      
+      // Crear 2-4 sesiones por día
+      const sessionsPerDay = Math.floor(Math.random() * 3) + 2;
+      
+      for (let i = 0; i < sessionsPerDay && i < hours.length; i++) {
+        const pet = pets[Math.floor(Math.random() * pets.length)];
+        const sitter = sitters[Math.floor(Math.random() * sitters.length)];
+        const hour = hours[Math.floor(Math.random() * hours.length)];
+        
+        const startTime = new Date(currentDate);
+        startTime.setHours(hour, 0, 0, 0);
+        
+        const endTime = new Date(startTime);
+        endTime.setHours(startTime.getHours() + 2);
 
-      const endTime = new Date(startTime);
-      endTime.setHours(startTime.getHours() + 2);
+        // Para fechas pasadas, más probabilidad de 'completed'
+        // Para fechas futuras, más probabilidad de 'scheduled'
+        let status;
+        if (day < 7) {
+          status = Math.random() > 0.3 ? 'completed' : statuses[Math.floor(Math.random() * statuses.length)];
+        } else if (day < 14) {
+          status = statuses[Math.floor(Math.random() * statuses.length)];
+        } else {
+          status = Math.random() > 0.3 ? 'scheduled' : statuses[Math.floor(Math.random() * statuses.length)];
+        }
 
-      const statuses = ['scheduled', 'in-progress', 'completed', 'cancelled'];
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-
-      try {
-        const result = await this.dataSource.query(
-          `INSERT INTO care_sessions (pet_id, sitter_id, start_time, end_time, status, notes)
-           VALUES ($1, $2, $3, $4, $5, $6)
-           RETURNING id, pet_id, status`,
-          [
-            pet.id,
-            sitter.id,
-            startTime.toISOString(),
-            endTime.toISOString(),
-            status,
-            `Sesión de cuidado para ${pet.name}`,
-          ]
-        );
-        createdSessions.push(result[0]);
-      } catch (error) {
-        console.error(`Error creating care session:`, error.message);
+        try {
+          const result = await this.dataSource.query(
+            `INSERT INTO care_sessions (pet_id, sitter_id, start_time, end_time, status, notes)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING id, pet_id, sitter_id, status`,
+            [
+              pet.id,
+              sitter.id,
+              startTime.toISOString(),
+              endTime.toISOString(),
+              status,
+              `Sesión de cuidado para ${pet.name}. ${status === 'completed' ? 'Sesión completada exitosamente.' : 'Sesión programada.'}`,
+            ]
+          );
+          createdSessions.push(result[0]);
+        } catch (error) {
+          // Ignorar errores de duplicados
+          if (!error.message?.includes('duplicate') && !error.message?.includes('unique')) {
+            console.error(`Error creating care session:`, error.message);
+          }
+        }
       }
     }
 
@@ -662,11 +717,11 @@ export class SeedService {
 
   async seedSessionReports() {
     const careSessions = await this.dataSource.query(
-      `SELECT cs.id, cs.pet_id, cs.sitter_id, p.name as pet_name
+      `SELECT cs.id, cs.pet_id, cs.sitter_id, cs.start_time, p.name as pet_name
        FROM care_sessions cs
        JOIN pets p ON cs.pet_id = p.id
        WHERE cs.status = 'completed'
-       LIMIT 10`
+       ORDER BY cs.start_time DESC`
     );
 
     if (careSessions.length === 0) {
@@ -681,26 +736,42 @@ export class SeedService {
       ['Alimentación', 'Juego interactivo', 'Cepillado'],
       ['Ejercicio físico', 'Socialización', 'Entrenamiento básico'],
       ['Tiempo de juego', 'Relajación', 'Observación de comportamiento'],
+      ['Paseo largo', 'Juego de buscar', 'Tiempo de descanso'],
+      ['Alimentación programada', 'Hidratación', 'Revisión de salud'],
     ];
 
     const moods = ['happy', 'calm', 'anxious', 'playful', 'tired'];
     const createdReports = [];
 
-    for (const session of careSessions) {
+    // Crear reportes para todas las sesiones completadas (o al menos la mayoría)
+    const sessionsToReport = careSessions.slice(0, Math.min(careSessions.length, 50));
+
+    for (const session of sessionsToReport) {
       const activitySet = activities[Math.floor(Math.random() * activities.length)];
       const mood = moods[Math.floor(Math.random() * moods.length)];
 
-      const feeding = Math.random() > 0.5 ? {
-        time: '12:00',
-        amount: '200g',
-        foodType: 'Croquetas premium',
+      const feeding = Math.random() > 0.4 ? {
+        time: `${8 + Math.floor(Math.random() * 10)}:00`,
+        amount: `${100 + Math.floor(Math.random() * 200)}g`,
+        foodType: ['Croquetas premium', 'Alimento húmedo', 'Dieta balanceada', 'Alimento especial'][Math.floor(Math.random() * 4)],
       } : null;
 
       const medication = Math.random() > 0.7 ? {
-        time: '08:00',
-        medication: 'Vitamina D',
-        dosage: '1 tableta',
+        time: `${8 + Math.floor(Math.random() * 4)}:00`,
+        medication: ['Vitamina D', 'Probióticos', 'Suplemento de calcio', 'Medicamento prescrito'][Math.floor(Math.random() * 4)],
+        dosage: ['1 tableta', '2 tabletas', '5ml', '1 dosis'][Math.floor(Math.random() * 4)],
       } : null;
+
+      // Usar la fecha de la sesión como fecha del reporte
+      const reportDate = new Date(session.start_time).toISOString().split('T')[0];
+
+      const notes = [
+        `Reporte de sesión para ${session.pet_name}. Todo salió bien.`,
+        `${session.pet_name} se mostró muy activo y colaborativo durante la sesión.`,
+        `Sesión exitosa con ${session.pet_name}. Se cumplieron todos los objetivos.`,
+        `${session.pet_name} disfrutó mucho de las actividades. Comportamiento excelente.`,
+        `Reporte positivo para ${session.pet_name}. Sin incidencias.`,
+      ][Math.floor(Math.random() * 5)];
 
       try {
         const result = await this.dataSource.query(
@@ -711,9 +782,9 @@ export class SeedService {
             session.id,
             session.pet_id,
             session.sitter_id,
-            new Date().toISOString().split('T')[0],
+            reportDate,
             activitySet,
-            `Reporte de sesión para ${session.pet_name}. Todo salió bien.`,
+            notes,
             mood,
             feeding ? JSON.stringify(feeding) : null,
             medication ? JSON.stringify(medication) : null,
@@ -721,7 +792,10 @@ export class SeedService {
         );
         createdReports.push(result[0]);
       } catch (error) {
-        console.error(`Error creating session report:`, error.message);
+        // Ignorar errores de duplicados
+        if (!error.message?.includes('duplicate') && !error.message?.includes('unique')) {
+          console.error(`Error creating session report:`, error.message);
+        }
       }
     }
 
@@ -734,9 +808,9 @@ export class SeedService {
 
   async seedLocations() {
     const owners = await this.dataSource.query(
-      `SELECT id FROM "user" WHERE role = 'owner' LIMIT 5`
+      `SELECT id FROM "user" WHERE role = 'owner' ORDER BY id`
     );
-    const pets = await this.dataSource.query(`SELECT id FROM pets LIMIT 5`);
+    const pets = await this.dataSource.query(`SELECT id, owner_id FROM pets ORDER BY owner_id`);
 
     if (owners.length === 0) {
       return {
@@ -745,21 +819,76 @@ export class SeedService {
       };
     }
 
-    const locationsData = [
-      { name: 'Casa Principal', address: 'Av. Providencia 123, Santiago', lat: -33.4489, lng: -70.6693, type: 'home', ownerId: owners[0].id, petId: pets[0]?.id },
-      { name: 'Veterinaria Central', address: 'Av. Las Condes 456, Las Condes', lat: -33.4167, lng: -70.5833, type: 'vet', ownerId: owners[0].id },
-      { name: 'Parque Los Dominicos', address: 'Av. Apoquindo 9085, Las Condes', lat: -33.4000, lng: -70.5500, type: 'park', ownerId: owners[0].id, petId: pets[0]?.id },
-      { name: 'Peluquería Canina', address: 'Av. Vitacura 2800, Vitacura', lat: -33.3833, lng: -70.5333, type: 'grooming', ownerId: owners[1]?.id || owners[0].id },
-      { name: 'Casa de Verano', address: 'Av. Costanera 1000, Viña del Mar', lat: -33.0246, lng: -71.5518, type: 'home', ownerId: owners[1]?.id || owners[0].id, petId: pets[1]?.id },
-    ];
+    // Agrupar mascotas por owner
+    const petsByOwner = {};
+    for (const pet of pets) {
+      if (!petsByOwner[pet.owner_id]) {
+        petsByOwner[pet.owner_id] = [];
+      }
+      petsByOwner[pet.owner_id].push(pet);
+    }
+
+    const locationsData = [];
+    
+    // Crear ubicaciones para cada owner
+    for (let i = 0; i < owners.length; i++) {
+      const owner = owners[i];
+      const ownerPets = petsByOwner[owner.id] || [];
+      
+      // Casa principal (home)
+      locationsData.push({
+        name: `Casa de ${owner.email.split('@')[0]}`,
+        address: `Av. Principal ${100 + i * 10}, Santiago`,
+        lat: -33.4489 + (i * 0.01),
+        lng: -70.6693 + (i * 0.01),
+        type: 'home',
+        ownerId: owner.id,
+        petId: ownerPets[0]?.id || null,
+      });
+      
+      // Veterinaria
+      locationsData.push({
+        name: `Veterinaria Favorita - Owner ${i + 1}`,
+        address: `Av. Las Condes ${456 + i * 10}, Las Condes`,
+        lat: -33.4167 + (i * 0.005),
+        lng: -70.5833 + (i * 0.005),
+        type: 'vet',
+        ownerId: owner.id,
+      });
+      
+      // Parque
+      if (ownerPets.length > 0) {
+        locationsData.push({
+          name: `Parque Favorito - ${ownerPets[0]?.id ? 'Pet' : 'Owner'} ${i + 1}`,
+          address: `Parque ${i + 1}, Santiago`,
+          lat: -33.4000 + (i * 0.008),
+          lng: -70.5500 + (i * 0.008),
+          type: 'park',
+          ownerId: owner.id,
+          petId: ownerPets[0]?.id || null,
+        });
+      }
+      
+      // Peluquería (solo para algunos owners)
+      if (i % 2 === 0) {
+        locationsData.push({
+          name: `Peluquería Canina ${i + 1}`,
+          address: `Av. Vitacura ${2800 + i * 10}, Vitacura`,
+          lat: -33.3833 + (i * 0.003),
+          lng: -70.5333 + (i * 0.003),
+          type: 'grooming',
+          ownerId: owner.id,
+        });
+      }
+    }
 
     const createdLocations = [];
     for (const locData of locationsData) {
       try {
         const result = await this.dataSource.query(
-          `INSERT INTO locations (name, address, latitude, longitude, pet_id, owner_id, type)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
-           RETURNING id, name, type`,
+          `INSERT INTO locations (name, address, latitude, longitude, pet_id, owner_id, type, notes)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           RETURNING id, name, type, owner_id`,
           [
             locData.name,
             locData.address,
@@ -768,6 +897,7 @@ export class SeedService {
             locData.petId || null,
             locData.ownerId,
             locData.type,
+            `Ubicación ${locData.type} para el owner ${locData.ownerId}`,
           ]
         );
         createdLocations.push(result[0]);
@@ -784,37 +914,108 @@ export class SeedService {
   }
 
   async seedPhotos() {
-    const pets = await this.dataSource.query(`SELECT id FROM pets LIMIT 5`);
-    const careSessions = await this.dataSource.query(`SELECT id FROM care_sessions LIMIT 5`);
-    const users = await this.dataSource.query(`SELECT id FROM "user" LIMIT 3`);
+    const pets = await this.dataSource.query(`SELECT id, name, owner_id FROM pets ORDER BY owner_id`);
+    const careSessions = await this.dataSource.query(
+      `SELECT id, pet_id FROM care_sessions ORDER BY start_time DESC LIMIT 20`
+    );
+    const sessionReports = await this.dataSource.query(
+      `SELECT id, care_session_id FROM session_reports LIMIT 10`
+    );
+    const owners = await this.dataSource.query(`SELECT id FROM "user" WHERE role = 'owner' ORDER BY id`);
+    const sitters = await this.dataSource.query(`SELECT id FROM "user" WHERE role = 'sitter' ORDER BY id`);
 
-    if (pets.length === 0 || users.length === 0) {
+    if (pets.length === 0) {
       return {
-        message: 'No pets or users found. Please seed pets first.',
+        message: 'No pets found. Please seed pets first.',
         photos: 0,
       };
     }
 
-    const photosData = [
-      { url: 'https://example.com/photos/pet1.jpg', petId: pets[0].id, uploadedBy: users[0].id, description: 'Foto de perfil' },
-      { url: 'https://example.com/photos/pet2.jpg', petId: pets[0].id, uploadedBy: users[0].id, description: 'Jugando en el parque' },
-      { url: 'https://example.com/photos/session1.jpg', careSessionId: careSessions[0]?.id, uploadedBy: users[1]?.id || users[0].id, description: 'Durante la sesión' },
-      { url: 'https://example.com/photos/pet3.jpg', petId: pets[1]?.id || pets[0].id, uploadedBy: users[0].id },
+    const photosData = [];
+    const photoUrls = [
+      'https://images.unsplash.com/photo-1583337130417-3346a1be7dee',
+      'https://images.unsplash.com/photo-1574158622682-e40e69881006',
+      'https://images.unsplash.com/photo-1552053831-71594a27632d',
+      'https://images.unsplash.com/photo-1517849845537-4d257902454a',
+      'https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8',
+      'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba',
+      'https://images.unsplash.com/photo-1517331156700-3c241d2b4d83',
+      'https://images.unsplash.com/photo-1517849845537-4d257902454a',
     ];
+
+    // Fotos de mascotas (subidas por owners)
+    for (let i = 0; i < Math.min(pets.length, 10); i++) {
+      const pet = pets[i];
+      const owner = owners.find(o => o.id === pet.owner_id) || owners[0];
+      
+      photosData.push({
+        url: `${photoUrls[i % photoUrls.length]}?w=800&h=600&fit=crop`,
+        thumbnailUrl: `${photoUrls[i % photoUrls.length]}?w=200&h=200&fit=crop`,
+        petId: pet.id,
+        uploadedBy: owner.id,
+        description: `Foto de ${pet.name}`,
+        tags: ['mascota', 'perfil'],
+      });
+      
+      // Segunda foto para algunas mascotas
+      if (i % 2 === 0) {
+        photosData.push({
+          url: `${photoUrls[(i + 1) % photoUrls.length]}?w=800&h=600&fit=crop`,
+          thumbnailUrl: `${photoUrls[(i + 1) % photoUrls.length]}?w=200&h=200&fit=crop`,
+          petId: pet.id,
+          uploadedBy: owner.id,
+          description: `${pet.name} jugando`,
+          tags: ['mascota', 'actividad'],
+        });
+      }
+    }
+
+    // Fotos de sesiones de cuidado (subidas por sitters)
+    for (let i = 0; i < Math.min(careSessions.length, 15); i++) {
+      const session = careSessions[i];
+      const sitter = sitters[Math.floor(Math.random() * sitters.length)] || sitters[0];
+      
+      photosData.push({
+        url: `${photoUrls[i % photoUrls.length]}?w=800&h=600&fit=crop`,
+        thumbnailUrl: `${photoUrls[i % photoUrls.length]}?w=200&h=200&fit=crop`,
+        careSessionId: session.id,
+        uploadedBy: sitter.id,
+        description: `Foto durante la sesión de cuidado`,
+        tags: ['sesión', 'cuidado'],
+      });
+    }
+
+    // Fotos de reportes de sesión
+    for (let i = 0; i < Math.min(sessionReports.length, 8); i++) {
+      const report = sessionReports[i];
+      const sitter = sitters[Math.floor(Math.random() * sitters.length)] || sitters[0];
+      
+      photosData.push({
+        url: `${photoUrls[i % photoUrls.length]}?w=800&h=600&fit=crop`,
+        thumbnailUrl: `${photoUrls[i % photoUrls.length]}?w=200&h=200&fit=crop`,
+        sessionReportId: report.id,
+        uploadedBy: sitter.id,
+        description: `Foto del reporte de sesión`,
+        tags: ['reporte', 'sesión'],
+      });
+    }
 
     const createdPhotos = [];
     for (const photoData of photosData) {
       try {
         const result = await this.dataSource.query(
-          `INSERT INTO photos (url, pet_id, care_session_id, uploaded_by, description)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO photos (url, thumbnail_url, pet_id, care_session_id, session_report_id, uploaded_by, description, tags)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
            RETURNING id, url`,
           [
             photoData.url,
+            photoData.thumbnailUrl || null,
             photoData.petId || null,
             photoData.careSessionId || null,
+            photoData.sessionReportId || null,
             photoData.uploadedBy,
             photoData.description || null,
+            photoData.tags || null,
           ]
         );
         createdPhotos.push(result[0]);
