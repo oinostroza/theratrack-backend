@@ -6,6 +6,7 @@ import {
   IsArray,
   MaxLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreatePhotoDto {
   @IsOptional()
@@ -28,6 +29,7 @@ export class CreatePhotoDto {
   @IsString()
   sessionReportId?: string;
 
+  @Type(() => Number)
   @IsNumber()
   @IsNotEmpty()
   uploadedBy: number;
