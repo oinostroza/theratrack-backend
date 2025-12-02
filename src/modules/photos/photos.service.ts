@@ -29,21 +29,18 @@ export class PhotosService {
   async createWithFile(file: any, createPhotoDto: CreatePhotoDto): Promise<Photo> {
     this.logger.log(`Creating new photo with file: ${file.originalname}`);
     
-    // Generar URL del archivo (en producción, esto debería subirse a S3, Cloudinary, etc.)
-    // Por ahora, usamos una URL relativa o base64
-    const fileUrl = `/uploads/photos/${Date.now()}-${file.originalname}`;
-    
-    // En un entorno real, aquí subirías el archivo a un servicio de almacenamiento
-    // y obtendrías la URL real. Por ahora, usamos la URL generada.
+    // El archivo ya fue guardado por multer en ./uploads/photos
+    // Generar URL relativa que será servida como archivo estático
+    const fileUrl = `/uploads/photos/${file.filename}`;
     
     const photoData: CreatePhotoDto = {
       ...createPhotoDto,
-      url: fileUrl, // URL generada después de subir el archivo
+      url: fileUrl, // URL relativa al archivo guardado
     };
     
     const photo = this.photoRepository.create(photoData);
     const savedPhoto = await this.photoRepository.save(photo);
-    this.logger.log(`Photo created successfully with ID: ${savedPhoto.id}`);
+    this.logger.log(`Photo created successfully with ID: ${savedPhoto.id}, URL: ${fileUrl}`);
     return savedPhoto;
   }
 
