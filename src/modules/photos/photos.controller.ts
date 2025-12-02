@@ -7,8 +7,14 @@ import {
   Param,
   Delete,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { PhotosService } from './photos.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
@@ -19,12 +25,58 @@ export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new photo', description: 'Creates a new photo entry' })
-  @ApiBody({ type: CreatePhotoDto })
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create a new photo', description: 'Creates a new photo entry by uploading a file' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+        uploadedBy: {
+          type: 'number',
+        },
+        petId: {
+          type: 'string',
+          required: false,
+        },
+        careSessionId: {
+          type: 'string',
+          required: false,
+        },
+        sessionReportId: {
+          type: 'string',
+          required: false,
+        },
+        description: {
+          type: 'string',
+          required: false,
+        },
+        tags: {
+          type: 'string',
+          required: false,
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, description: 'Photo created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid input data' })
-  create(@Body() createPhotoDto: CreatePhotoDto) {
-    return this.photosService.create(createPhotoDto);
+  async create(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileTypeValidator({ fileType: /(jpg|jpeg|png|gif|webp)$/ }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Body() createPhotoDto: CreatePhotoDto,
+  ) {
+    return this.photosService.createWithFile(file, createPhotoDto);
   }
 
   @Get()

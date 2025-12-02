@@ -8,9 +8,9 @@ import {
 } from 'class-validator';
 
 export class CreatePhotoDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  url: string;
+  url?: string; // Se generará automáticamente después de subir el archivo
 
   @IsOptional()
   @IsString()

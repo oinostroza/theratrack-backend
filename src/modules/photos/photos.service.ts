@@ -26,6 +26,27 @@ export class PhotosService {
     return savedPhoto;
   }
 
+  async createWithFile(file: Express.Multer.File, createPhotoDto: CreatePhotoDto): Promise<Photo> {
+    this.logger.log(`Creating new photo with file: ${file.originalname}`);
+    
+    // Generar URL del archivo (en producción, esto debería subirse a S3, Cloudinary, etc.)
+    // Por ahora, usamos una URL relativa o base64
+    const fileUrl = `/uploads/photos/${Date.now()}-${file.originalname}`;
+    
+    // En un entorno real, aquí subirías el archivo a un servicio de almacenamiento
+    // y obtendrías la URL real. Por ahora, usamos la URL generada.
+    
+    const photoData: CreatePhotoDto = {
+      ...createPhotoDto,
+      url: fileUrl, // URL generada después de subir el archivo
+    };
+    
+    const photo = this.photoRepository.create(photoData);
+    const savedPhoto = await this.photoRepository.save(photo);
+    this.logger.log(`Photo created successfully with ID: ${savedPhoto.id}`);
+    return savedPhoto;
+  }
+
   async findAll(): Promise<Photo[]> {
     this.logger.log('Fetching all photos');
     const photos = await this.photoRepository.find({
