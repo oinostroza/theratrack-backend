@@ -12,6 +12,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -80,13 +81,21 @@ export class PhotosController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png|gif|webp)$/ }),
         ],
+        fileIsRequired: true,
       }),
     )
     file: any,
     @Body() createPhotoDto: CreatePhotoDto,
   ) {
+    // Validar tipo de archivo manualmente
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!file.mimetype || !allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Tipo de archivo no permitido. Tipos permitidos: ${allowedMimeTypes.join(', ')}`
+      );
+    }
+    
     return this.photosService.createWithFile(file, createPhotoDto);
   }
 
