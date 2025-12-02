@@ -19,28 +19,26 @@ export class PhotosService {
   ) {}
 
   async create(createPhotoDto: CreatePhotoDto): Promise<Photo> {
-    this.logger.log(`Creating new photo: ${createPhotoDto.url}`);
-    const photo = this.photoRepository.create(createPhotoDto);
+    this.logger.log(`Creating new photo: ${createPhotoDto.filename} in folder ${createPhotoDto.folder}`);
+    
+    // Construir la URL relativa basada en la carpeta y el nombre del archivo
+    // El frontend guarda en photos/avatars/ o photos/sessions/
+    const url = `photos/${createPhotoDto.folder}/${createPhotoDto.filename}`;
+    
+    // Crear el objeto Photo con la URL construida
+    const photo = this.photoRepository.create({
+      url: url,
+      petId: createPhotoDto.petId,
+      careSessionId: createPhotoDto.careSessionId,
+      sessionReportId: createPhotoDto.sessionReportId,
+      uploadedBy: createPhotoDto.uploadedBy,
+      description: createPhotoDto.description,
+      tags: createPhotoDto.tags,
+      thumbnailUrl: createPhotoDto.thumbnailUrl,
+    });
+    
     const savedPhoto = await this.photoRepository.save(photo);
-    this.logger.log(`Photo created successfully with ID: ${savedPhoto.id}`);
-    return savedPhoto;
-  }
-
-  async createWithFile(file: any, createPhotoDto: CreatePhotoDto): Promise<Photo> {
-    this.logger.log(`Creating new photo with file: ${file.originalname}`);
-    
-    // El archivo ya fue guardado por multer en ./uploads/photos
-    // Generar URL relativa que será servida como archivo estático
-    const fileUrl = `/uploads/photos/${file.filename}`;
-    
-    const photoData: CreatePhotoDto = {
-      ...createPhotoDto,
-      url: fileUrl, // URL relativa al archivo guardado
-    };
-    
-    const photo = this.photoRepository.create(photoData);
-    const savedPhoto = await this.photoRepository.save(photo);
-    this.logger.log(`Photo created successfully with ID: ${savedPhoto.id}, URL: ${fileUrl}`);
+    this.logger.log(`Photo created successfully with ID: ${savedPhoto.id}, URL: ${url}`);
     return savedPhoto;
   }
 

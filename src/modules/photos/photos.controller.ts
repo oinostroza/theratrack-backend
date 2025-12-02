@@ -7,17 +7,8 @@ import {
   Param,
   Delete,
   Query,
-  UseInterceptors,
-  UploadedFile,
-  ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
-  BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { PhotosService } from './photos.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
@@ -28,75 +19,12 @@ export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/photos',
-        filename: (req, file, cb) => {
-          // Generar nombre único: timestamp + nombre original
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-          const ext = extname(file.originalname);
-          const filename = `${uniqueSuffix}${ext}`;
-          cb(null, filename);
-        },
-      }),
-    }),
-  )
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Create a new photo', description: 'Creates a new photo entry by uploading a file' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['file', 'uploadedBy'],
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-        uploadedBy: {
-          type: 'number',
-        },
-        petId: {
-          type: 'string',
-        },
-        careSessionId: {
-          type: 'string',
-        },
-        sessionReportId: {
-          type: 'string',
-        },
-        description: {
-          type: 'string',
-        },
-        tags: {
-          type: 'string',
-        },
-      },
-    },
-  })
+  @ApiOperation({ summary: 'Create a new photo', description: 'Creates a new photo entry. The file is stored in the frontend (photos/avatars/ or photos/sessions/), this endpoint only saves metadata with the filename and folder.' })
+  @ApiBody({ type: CreatePhotoDto })
   @ApiResponse({ status: 201, description: 'Photo created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid input data' })
-  async create(
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-        ],
-        fileIsRequired: true,
-      }),
-    )
-    file: any,
-    @Body() createPhotoDto: CreatePhotoDto,
-  ) {
-    // Validar tipo de archivo manualmente
-    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!file.mimetype || !allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        `Tipo de archivo no permitido. Tipos permitidos: ${allowedMimeTypes.join(', ')}`
-      );
-    }
-    
-    return this.photosService.createWithFile(file, createPhotoDto);
+  async create(@Body() createPhotoDto: CreatePhotoDto) {
+    return this.photosService.create(createPhotoDto);
   }
 
   @Get()

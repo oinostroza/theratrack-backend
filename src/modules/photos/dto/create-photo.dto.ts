@@ -9,9 +9,13 @@ import {
 import { Type } from 'class-transformer';
 
 export class CreatePhotoDto {
-  @IsOptional()
   @IsString()
-  url?: string; // Se generará automáticamente después de subir el archivo
+  @IsNotEmpty()
+  filename: string; // Nombre del archivo guardado en el frontend
+
+  @IsString()
+  @IsNotEmpty()
+  folder: string; // 'avatars' o 'sessions' - subcarpeta donde se guardó
 
   @IsOptional()
   @IsString()
