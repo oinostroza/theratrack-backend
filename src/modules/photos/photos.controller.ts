@@ -31,6 +31,7 @@ export class PhotosController {
   @ApiBody({
     schema: {
       type: 'object',
+      required: ['file', 'uploadedBy'],
       properties: {
         file: {
           type: 'string',
@@ -41,23 +42,18 @@ export class PhotosController {
         },
         petId: {
           type: 'string',
-          required: false,
         },
         careSessionId: {
           type: 'string',
-          required: false,
         },
         sessionReportId: {
           type: 'string',
-          required: false,
         },
         description: {
           type: 'string',
-          required: false,
         },
         tags: {
           type: 'string',
-          required: false,
         },
       },
     },
@@ -69,11 +65,11 @@ export class PhotosController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({ fileType: /(jpg|jpeg|png|gif|webp)$/ }),
+          new FileTypeValidator({ fileType: /(image\/)(jpeg|jpg|png|gif|webp)$/ }),
         ],
       }),
     )
-    file: Express.Multer.File,
+    file: any,
     @Body() createPhotoDto: CreatePhotoDto,
   ) {
     return this.photosService.createWithFile(file, createPhotoDto);

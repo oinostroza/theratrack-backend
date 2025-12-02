@@ -26,7 +26,7 @@ export class PhotosService {
     return savedPhoto;
   }
 
-  async createWithFile(file: Express.Multer.File, createPhotoDto: CreatePhotoDto): Promise<Photo> {
+  async createWithFile(file: any, createPhotoDto: CreatePhotoDto): Promise<Photo> {
     this.logger.log(`Creating new photo with file: ${file.originalname}`);
     
     // Generar URL del archivo (en producción, esto debería subirse a S3, Cloudinary, etc.)
