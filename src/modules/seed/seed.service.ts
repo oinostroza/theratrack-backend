@@ -844,10 +844,17 @@ export class SeedService {
       const ownerPets = petsByOwner[owner.id] || [];
       const ownerName = owner.email ? owner.email.split('@')[0] : `Owner${i + 1}`;
       
-      // Casa principal (home)
+      // Casa principal (home) - Usar direcciones reales de Santiago
+      const homeAddresses = [
+        'Av. Providencia 1234, Providencia, Santiago',
+        'Av. Las Condes 7890, Las Condes, Santiago',
+        'Av. Vitacura 4567, Vitacura, Santiago',
+        'Av. Apoquindo 3210, Las Condes, Santiago',
+        'Av. Nueva Providencia 2345, Providencia, Santiago'
+      ];
       locationsData.push({
         name: `Casa de ${ownerName}`,
-        address: `Av. Principal ${100 + i * 10}, Santiago`,
+        address: homeAddresses[i % homeAddresses.length],
         lat: -33.4489 + (i * 0.01),
         lng: -70.6693 + (i * 0.01),
         type: 'home',
@@ -855,21 +862,33 @@ export class SeedService {
         petId: ownerPets[0]?.id || null,
       });
       
-      // Veterinaria
+      // Veterinaria - Direcciones reales
+      const vetAddresses = [
+        'Av. Las Condes 12345, Las Condes, Santiago',
+        'Av. Providencia 5678, Providencia, Santiago',
+        'Av. Vitacura 9012, Vitacura, Santiago'
+      ];
       locationsData.push({
         name: `Veterinaria Favorita - Owner ${i + 1}`,
-        address: `Av. Las Condes ${456 + i * 10}, Las Condes`,
+        address: vetAddresses[i % vetAddresses.length],
         lat: -33.4167 + (i * 0.005),
         lng: -70.5833 + (i * 0.005),
         type: 'vet',
         ownerId: owner.id,
       });
       
-      // Parque
+      // Parque - Usar parques reales de Santiago
+      const parkAddresses = [
+        'Parque Forestal, Santiago Centro, Santiago',
+        'Parque Bicentenario, Vitacura, Santiago',
+        'Parque Metropolitano, Recoleta, Santiago',
+        'Parque O\'Higgins, Santiago, Santiago',
+        'Parque Quinta Normal, Quinta Normal, Santiago'
+      ];
       if (ownerPets.length > 0) {
         locationsData.push({
           name: `Parque Favorito - ${ownerPets[0]?.id ? 'Pet' : 'Owner'} ${i + 1}`,
-          address: `Parque ${i + 1}, Santiago`,
+          address: parkAddresses[i % parkAddresses.length],
           lat: -33.4000 + (i * 0.008),
           lng: -70.5500 + (i * 0.008),
           type: 'park',
@@ -878,11 +897,28 @@ export class SeedService {
         });
       }
       
+      // Estadio Nacional para algunos paseos
+      if (i % 3 === 0) {
+        locationsData.push({
+          name: `Estadio Nacional - Paseo ${i + 1}`,
+          address: 'Av. Grecia 2001, Ñuñoa, Santiago, Chile',
+          lat: -33.4644,
+          lng: -70.6103,
+          type: 'park',
+          ownerId: owner.id,
+          petId: ownerPets[0]?.id || null,
+        });
+      }
+      
       // Peluquería (solo para algunos owners)
       if (i % 2 === 0) {
+        const groomingAddresses = [
+          'Av. Vitacura 3456, Vitacura, Santiago',
+          'Av. Las Condes 8901, Las Condes, Santiago'
+        ];
         locationsData.push({
           name: `Peluquería Canina ${i + 1}`,
-          address: `Av. Vitacura ${2800 + i * 10}, Vitacura`,
+          address: groomingAddresses[i % groomingAddresses.length],
           lat: -33.3833 + (i * 0.003),
           lng: -70.5333 + (i * 0.003),
           type: 'grooming',
